@@ -15,6 +15,12 @@ const S = {
   autoTimer:       null,
   useMock:         false,
   activeSpeaker:   'caller',
+
+  // voice
+  recognition:     null,
+  isRecording:     false,
+  interimBuffer:   '',
+  analysisTimer:   null,
 };
 
 /* ═══════════════════════════════════════════════════════════
@@ -627,4 +633,154 @@ function syncMockBtn() {
   btn.title = S.useMock
     ? 'Using pre-computed mock results (instant)'
     : 'Using live AEGIS model via Ollama';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VOICE — Web Speech API
+   Works in Chrome and Edge. Zero install, zero cost.
+   ═══════════════════════════════════════════════════════════ */
+
+function initSpeech() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    showSpeechUnsupported();
+    return false;
+  }
+
+  const r = new SR();
+  r.continuous      = true;   // keep listening across pauses
+  r.interimResults  = true;   // show words as they come in
+  r.lang            = 'en-US';
+  r.maxAlternatives = 1;
+
+  r.onresult = (e) => {
+    let interim = '';
+    let finalText = '';
+
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        finalText += t;
+      } else {
+        interim += t;
+      }
+    }
+
+    // Show live preview
+    if (interim) {
+      showInterim(interim);
+    }
+
+    // Commit a final utterance
+    if (finalText.trim()) {
+      hideInterim();
+      commitSpeech(finalText.trim());
+    }
+  };
+
+  r.onerror = (e) => {
+    if (e.error === 'no-speech') return;   // normal timeout, just restart
+    console.warn('Speech error:', e.error);
+    if (e.error === 'not-allowed') {
+      showSpeechUnsupported('Microphone permission denied. Allow mic access and try again.');
+      stopRecording();
+    }
+  };
+
+  // Auto-restart so it stays live (continuous mode can still stop on its own)
+  r.onend = () => {
+    if (S.isRecording) {
+      try { r.start(); } catch (_) { /* already started */ }
+    }
+  };
+
+  S.recognition = r;
+  return true;
+}
+
+function toggleRecording() {
+  if (S.isRecording) {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
+function startRecording() {
+  // Switch to Live tab first
+  switchTab('live');
+
+  if (!S.recognition && !initSpeech()) return;
+
+  S.isRecording = true;
+  try { S.recognition.start(); } catch (_) { /* already running */ }
+
+  // UI
+  const btn = document.getElementById('btnMic');
+  btn.classList.add('recording');
+  document.getElementById('micLabel').textContent    = 'Stop';
+  document.getElementById('micStatus').textContent   = '● Recording';
+  document.getElementById('micSub').textContent      = `Speaking as ${S.activeSpeaker === 'caller' ? '🎭 Caller' : '👤 Receiver'}`;
+  document.getElementById('micWaves').classList.remove('hidden');
+  document.getElementById('callBadge').style.display = 'inline';
+}
+
+function stopRecording() {
+  S.isRecording = false;
+  if (S.recognition) {
+    try { S.recognition.stop(); } catch (_) {}
+  }
+
+  // Flush any partial interim as a final turn
+  const interim = document.getElementById('interimText')?.textContent?.trim();
+  if (interim) {
+    hideInterim();
+    commitSpeech(interim);
+  }
+
+  // UI
+  const btn = document.getElementById('btnMic');
+  btn.classList.remove('recording');
+  document.getElementById('micLabel').textContent  = 'Speak';
+  document.getElementById('micStatus').textContent = 'Voice Input';
+  document.getElementById('micSub').textContent    = 'Chrome / Edge · speaks directly into transcript';
+  document.getElementById('micWaves').classList.add('hidden');
+}
+
+function commitSpeech(text) {
+  if (!text) return;
+
+  // Add to transcript
+  appendTurn({ speaker: S.activeSpeaker, text });
+
+  // Auto-switch speaker after each commit (caller → receiver → caller…)
+  const next = S.activeSpeaker === 'caller' ? 'receiver' : 'caller';
+  setSpeaker(next);
+
+  // Debounce analysis — wait 1.2 s after last speech before calling API
+  clearTimeout(S.analysisTimer);
+  S.analysisTimer = setTimeout(() => runAnalysis(), 1200);
+}
+
+function showInterim(text) {
+  const box = document.getElementById('interimBox');
+  box.classList.remove('hidden');
+  document.getElementById('interimSpeaker').textContent =
+    S.activeSpeaker === 'caller' ? '🎭 Caller' : '👤 Receiver';
+  document.getElementById('interimText').textContent = text;
+}
+
+function hideInterim() {
+  document.getElementById('interimBox').classList.add('hidden');
+  document.getElementById('interimText').textContent = '';
+}
+
+function showSpeechUnsupported(msg) {
+  const existing = document.getElementById('speechWarning');
+  if (existing) return;
+  const el = document.createElement('div');
+  el.id        = 'speechWarning';
+  el.className = 'speech-unsupported';
+  el.textContent = msg || '⚠️ Voice input requires Chrome or Edge. Use the text box below instead.';
+  document.getElementById('btnMic').closest('.mic-row').insertAdjacentElement('afterend', el);
 }

@@ -93,6 +93,7 @@
     <!-- ─── LIVE PANEL ─── -->
     <div class="tab-panel hidden" id="tab-live">
 
+      <!-- Speaker selector -->
       <div class="speaker-toggle">
         <button class="speaker-btn speaker-active" id="btnCaller" onclick="setSpeaker('caller')">
           🎭 Caller
@@ -102,11 +103,36 @@
         </button>
       </div>
 
+      <!-- Voice input -->
+      <div class="mic-row">
+        <button class="mic-btn" id="btnMic" onclick="toggleRecording()" title="Click to speak">
+          <span class="mic-icon">🎤</span>
+          <span class="mic-label" id="micLabel">Speak</span>
+        </button>
+        <div class="mic-info">
+          <div class="mic-info-title" id="micStatus">Voice Input</div>
+          <div class="mic-info-sub" id="micSub">Chrome / Edge · speaks directly into transcript</div>
+        </div>
+        <div class="mic-waves hidden" id="micWaves">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- Interim text preview -->
+      <div class="interim-box hidden" id="interimBox">
+        <span class="interim-speaker" id="interimSpeaker">Caller</span>
+        <span class="interim-text" id="interimText"></span>
+        <span class="interim-cursor">▌</span>
+      </div>
+
+      <!-- Divider -->
+      <div class="or-divider"><span>or type</span></div>
+
       <textarea
         class="textarea"
         id="liveInput"
-        rows="3"
-        placeholder="Type a conversation turn and click Add — e.g. &quot;This is Agent Williams from the IRS. A warrant has been issued.&quot;"
+        rows="2"
+        placeholder="Type a turn and click Add…"
       ></textarea>
 
       <div class="btn-row">
