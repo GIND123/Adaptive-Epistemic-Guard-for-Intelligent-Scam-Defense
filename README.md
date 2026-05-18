@@ -1,5 +1,9 @@
 # AEGIS
 
+
+<img width="2346" height="591" alt="image" src="https://github.com/user-attachments/assets/7c7d18f3-944b-485b-8ac1-21ba72949a85" />
+
+
 **Adaptive Epistemic Guard for Intelligent Scam Defense**
 
 Real-time epistemic manipulation detection for phone conversations, powered by a fine-tuned Gemma 4 E4B model running 100% locally via Ollama.
