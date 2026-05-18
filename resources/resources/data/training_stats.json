@@ -1,0 +1,13 @@
+{
+  "steps": 150,
+  "loss": 0.4065494219462077,
+  "train_size": 396,
+  "eval_size": 44,
+  "epochs": 3,
+  "lora_r": 16,
+  "lr": 0.0002,
+  "batch_size": 2,
+  "grad_accum": 4,
+  "max_seq_len": 2048,
+  "gpu": "NVIDIA A100-SXM4-80GB"
+}
