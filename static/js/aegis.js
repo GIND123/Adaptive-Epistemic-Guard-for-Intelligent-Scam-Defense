@@ -21,6 +21,11 @@ const S = {
   isRecording:     false,
   interimBuffer:   '',
   analysisTimer:   null,
+
+  // tab capture
+  tabStream:       null,
+  tabRecorder:     null,
+  isCapturing:     false,
 };
 
 /* ═══════════════════════════════════════════════════════════
@@ -773,6 +778,124 @@ function showInterim(text) {
 function hideInterim() {
   document.getElementById('interimBox').classList.add('hidden');
   document.getElementById('interimText').textContent = '';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TAB AUDIO CAPTURE — getDisplayMedia + faster-whisper
+   Works in Chrome/Edge. User selects a tab and checks "Share audio".
+   ═══════════════════════════════════════════════════════════ */
+
+async function startTabCapture() {
+  if (S.isCapturing) {
+    stopTabCapture();
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,   // required for tab picker to appear
+      audio: { channelCount: 1, sampleRate: 16000 },
+    });
+
+    const audioTracks = stream.getAudioTracks();
+    if (!audioTracks.length) {
+      stream.getTracks().forEach(t => t.stop());
+      _showCaptureWarning('No audio captured. Make sure to check "Share audio" when selecting a tab.');
+      return;
+    }
+
+    // Stop video — we only need audio
+    stream.getVideoTracks().forEach(t => t.stop());
+    const audioStream = new MediaStream(audioTracks);
+
+    S.tabStream   = stream;
+    S.isCapturing = true;
+
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus' : 'audio/webm';
+
+    const recorder = new MediaRecorder(audioStream, { mimeType });
+    S.tabRecorder = recorder;
+
+    // WebM: chunk 1 carries the EBML init segment (codec info).
+    // Chunks 2+ are raw clusters that Whisper cannot decode standalone.
+    // Fix: prepend the init segment to every subsequent chunk.
+    let initSegment = null;
+
+    recorder.ondataavailable = (e) => {
+      if (!e.data || e.data.size < 500) return;
+      if (!initSegment) {
+        initSegment = e.data;            // save header chunk
+        processAudioChunk(e.data);       // first chunk is already complete
+        return;
+      }
+      // Re-attach header so Whisper gets a fully-decodable WebM file
+      const full = new Blob([initSegment, e.data], { type: mimeType });
+      processAudioChunk(full);
+    };
+
+    recorder.start(6000);  // 6-second chunks — better Whisper context
+
+    audioTracks[0].onended = () => stopTabCapture();
+
+    updateCaptureUI(true);
+    switchTab('live');
+    document.getElementById('callBadge').style.display = 'inline';
+
+  } catch (e) {
+    if (e.name !== 'NotAllowedError') console.error('Tab capture:', e);
+  }
+}
+
+function stopTabCapture() {
+  S.isCapturing = false;
+  if (S.tabRecorder) { try { S.tabRecorder.stop(); } catch (_) {} S.tabRecorder = null; }
+  if (S.tabStream)   { S.tabStream.getTracks().forEach(t => t.stop()); S.tabStream = null; }
+  updateCaptureUI(false);
+}
+
+async function processAudioChunk(blob) {
+  const form = new FormData();
+  form.append('audio', blob, 'chunk.webm');
+  try {
+    const r = await fetch('/api/transcribe', { method: 'POST', body: form });
+    const d = await r.json();
+    const text = (d.text || '').trim();
+    if (text.length > 3) {
+      appendTurn({ speaker: S.activeSpeaker, text });
+      clearTimeout(S.analysisTimer);
+      S.analysisTimer = setTimeout(() => runAnalysis(), 1500);
+    }
+  } catch (e) { console.warn('Transcribe error:', e); }
+}
+
+function updateCaptureUI(on) {
+  const btn    = document.getElementById('btnCapture');
+  const status = document.getElementById('captureStatus');
+  const waves  = document.getElementById('captureWaves');
+  const label  = document.getElementById('captureLabel');
+  if (on) {
+    btn.classList.add('capturing');
+    label.textContent  = 'Stop';
+    status.textContent = '● Capturing tab audio';
+    waves.classList.remove('hidden');
+  } else {
+    btn.classList.remove('capturing');
+    label.textContent  = 'Capture';
+    status.textContent = 'Capture audio from any tab';
+    waves.classList.add('hidden');
+  }
+}
+
+function _showCaptureWarning(msg) {
+  const existing = document.getElementById('captureWarning');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id        = 'captureWarning';
+  el.className = 'speech-unsupported';
+  el.textContent = msg;
+  document.getElementById('captureRow').insertAdjacentElement('afterend', el);
+  setTimeout(() => el.remove(), 6000);
 }
 
 function showSpeechUnsupported(msg) {

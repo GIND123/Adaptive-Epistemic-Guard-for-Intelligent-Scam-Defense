@@ -571,6 +571,75 @@ body::before {
 }
 
 /* ═══════════════════════════════════════════════════
+   TAB AUDIO CAPTURE
+   ═══════════════════════════════════════════════════ */
+.capture-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #06090f;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+}
+
+.capture-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #0a1428;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all .2s;
+  flex-shrink: 0;
+  gap: 2px;
+  font-family: var(--font);
+}
+.capture-btn:hover { border-color: var(--accent-dim); background: #0d1c38; }
+.capture-btn.capturing {
+  border-color: var(--green);
+  background: #061a0e;
+  box-shadow: 0 0 0 4px rgba(0,255,135,.12), 0 0 20px rgba(0,255,135,.18);
+  animation: capture-ring 1.5s infinite;
+}
+@keyframes capture-ring {
+  0%   { box-shadow: 0 0 0 4px rgba(0,255,135,.12), 0 0 20px rgba(0,255,135,.12); }
+  50%  { box-shadow: 0 0 0 8px rgba(0,255,135,.06), 0 0 30px rgba(0,255,135,.28); }
+  100% { box-shadow: 0 0 0 4px rgba(0,255,135,.12), 0 0 20px rgba(0,255,135,.12); }
+}
+
+.capture-icon  { font-size: 1.3rem; line-height: 1; }
+.capture-label {
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.capture-btn.capturing .capture-label { color: var(--green); }
+
+.capture-info { flex: 1; }
+.capture-status {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.capture-sub {
+  font-size: .68rem;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+.capture-sub strong { color: var(--accent-dim); }
+
+/* green waves for capture (overrides default red) */
+.capture-waves span { background: var(--green) !important; }
+
+/* ═══════════════════════════════════════════════════
    LIVE CONTROLS
    ═══════════════════════════════════════════════════ */
 .speaker-toggle {

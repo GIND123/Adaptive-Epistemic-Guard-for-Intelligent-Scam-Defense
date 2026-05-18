@@ -93,6 +93,21 @@
     <!-- ─── LIVE PANEL ─── -->
     <div class="tab-panel hidden" id="tab-live">
 
+      <!-- Tab / window audio capture -->
+      <div class="capture-row" id="captureRow">
+        <button class="capture-btn" id="btnCapture" onclick="startTabCapture()">
+          <span class="capture-icon">🖥️</span>
+          <span class="capture-label" id="captureLabel">Capture</span>
+        </button>
+        <div class="capture-info">
+          <div class="capture-status" id="captureStatus">Capture audio from any tab</div>
+          <div class="capture-sub">YouTube · select tab → check <strong>Share audio</strong> → Share</div>
+        </div>
+        <div class="mic-waves capture-waves hidden" id="captureWaves">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
       <!-- Speaker selector -->
       <div class="speaker-toggle">
         <button class="speaker-btn speaker-active" id="btnCaller" onclick="setSpeaker('caller')">

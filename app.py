@@ -5,6 +5,7 @@ Run: python app.py  (opens http://localhost:5001)
 
 import os
 import sys
+import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -69,6 +70,68 @@ def api_analyze():
     return jsonify({"analysis": result, "tools": tools})
 
 
+# ── Transcription ─────────────────────────────────────────────────────────────
+
+_whisper_model = None
+_whisper_lock  = None
+
+
+def _get_whisper():
+    global _whisper_model, _whisper_lock
+    import threading
+    if _whisper_lock is None:
+        _whisper_lock = threading.Lock()
+    with _whisper_lock:
+        if _whisper_model is None:
+            try:
+                from faster_whisper import WhisperModel
+                # base gives ~4–5× better accuracy than tiny at ~2s latency per 6s chunk on CPU
+                _whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
+            except Exception:
+                return None
+    return _whisper_model
+
+
+def _preload_whisper():
+    """Download + initialise Whisper in background so first real request is instant."""
+    import threading
+    threading.Thread(target=_get_whisper, daemon=True).start()
+
+
+@app.route("/api/transcribe", methods=["POST"])
+def api_transcribe():
+    if "audio" not in request.files:
+        return jsonify({"error": "No audio file", "text": ""}), 400
+
+    model = _get_whisper()
+    if model is None:
+        return jsonify({"error": "Whisper not available", "text": ""}), 503
+
+    audio_file = request.files["audio"]
+    with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as tmp:
+        audio_file.save(tmp.name)
+        tmp_path = tmp.name
+
+    try:
+        segments, _ = model.transcribe(
+            tmp_path,
+            beam_size=5,                 # higher = better accuracy
+            language="en",
+            vad_filter=True,
+            vad_parameters=dict(min_silence_duration_ms=300),
+            condition_on_previous_text=False,
+        )
+        text = " ".join(seg.text.strip() for seg in segments)
+        return jsonify({"text": text.strip()})
+    except Exception as e:
+        return jsonify({"error": str(e), "text": ""}), 500
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+
+
 def _run_tools(transcript: list) -> list:
     results = []
     full_text = " ".join(t.get("text", "").lower() for t in transcript)
@@ -102,5 +165,6 @@ def index():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
+    _preload_whisper()   # start downloading/loading base model in background
     print(f"\n  AEGIS running at http://localhost:{port}\n")
     app.run(debug=False, port=port, host="0.0.0.0")
