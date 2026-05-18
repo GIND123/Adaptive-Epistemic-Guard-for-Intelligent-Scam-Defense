@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AEGIS — Adaptive Epistemic Guard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/aegis.css') }}" />
+</head>
+<body>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<header class="header">
+  <div class="header-brand">
+    <span class="header-shield" aria-hidden="true">🛡️</span>
+    <div>
+      <div class="header-title">AEGIS</div>
+      <div class="header-sub">Adaptive Epistemic Guard for Intelligent Scam Defense</div>
+    </div>
+  </div>
+  <div class="header-status">
+    <span class="status-pill" id="statusPill">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Checking...</span>
+    </span>
+    <span class="header-tech">Gemma 4 E4B &nbsp;·&nbsp; Ollama &nbsp;·&nbsp; 100% Local</span>
+  </div>
+</header>
+
+<!-- ═══════════════════════ MAIN GRID ═══════════════════════ -->
+<main class="main-grid">
+
+  <!-- ─── LEFT: Transcript + Controls ─── -->
+  <section class="panel panel-left">
+
+    <div class="panel-header">
+      <span class="panel-icon">📞</span>
+      <span class="panel-title">Live Transcript</span>
+      <span class="call-badge" id="callBadge" style="display:none">● CALL ACTIVE</span>
+    </div>
+
+    <div class="transcript" id="transcript">
+      <div class="transcript-empty" id="transcriptEmpty">
+        <div class="empty-icon">📞</div>
+        <div class="empty-title">No call in progress</div>
+        <div class="empty-sub">Select a demo scenario below or use Live Analysis</div>
+      </div>
+    </div>
+
+    <!-- ─── TABS ─── -->
+    <div class="tabs">
+      <button class="tab tab-active" data-tab="demo" onclick="switchTab('demo')">🎬 Demo</button>
+      <button class="tab" data-tab="live" onclick="switchTab('live')">⌨️ Live</button>
+    </div>
+
+    <!-- ─── DEMO PANEL ─── -->
+    <div class="tab-panel" id="tab-demo">
+
+      <select class="select" id="scenarioSelect" onchange="handleScenarioChange()">
+        <option value="">Loading scenarios...</option>
+      </select>
+
+      <div class="scenario-meta" id="scenarioMeta" style="display:none">
+        <span class="meta-tag" id="metaVictim"></span>
+        <span class="meta-tag" id="metaType"></span>
+        <span class="meta-tag" id="metaStep">Step 0/0</span>
+      </div>
+
+      <div class="scenario-desc" id="scenarioDesc"></div>
+
+      <div class="progress-bar-wrap" id="progressWrap" style="display:none">
+        <div class="progress-bar" id="progressBar"></div>
+        <span class="progress-label" id="progressLabel">0%</span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnNext" onclick="nextTurn()" title="Advance one turn">
+          ▶ Next Turn
+        </button>
+        <button class="btn btn-secondary" id="btnAuto" onclick="toggleAutoPlay()">
+          ⚡ Auto Play
+        </button>
+        <button class="btn btn-ghost" onclick="resetDemo()">↩ Reset</button>
+        <button class="btn btn-ghost" id="btnMock" onclick="toggleMock()">🔮 Live AI</button>
+      </div>
+
+    </div><!-- /tab-demo -->
+
+    <!-- ─── LIVE PANEL ─── -->
+    <div class="tab-panel hidden" id="tab-live">
+
+      <div class="speaker-toggle">
+        <button class="speaker-btn speaker-active" id="btnCaller" onclick="setSpeaker('caller')">
+          🎭 Caller
+        </button>
+        <button class="speaker-btn" id="btnReceiver" onclick="setSpeaker('receiver')">
+          👤 Receiver
+        </button>
+      </div>
+
+      <textarea
+        class="textarea"
+        id="liveInput"
+        rows="3"
+        placeholder="Type a conversation turn and click Add — e.g. &quot;This is Agent Williams from the IRS. A warrant has been issued.&quot;"
+      ></textarea>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="addLiveTurn()">➕ Add Turn</button>
+        <button class="btn btn-secondary" onclick="analyzeNow()">🔍 Analyze</button>
+        <button class="btn btn-ghost" onclick="resetDemo()">🗑️ Clear</button>
+      </div>
+
+      <div class="live-options">
+        <label class="toggle-label">
+          <input type="checkbox" id="showEvidence" onchange="renderVectors()" />
+          Show evidence detail
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="showTools" checked onchange="renderTools()" />
+          Verification tools
+        </label>
+      </div>
+
+      <div class="quick-load">
+        <span class="ql-label">Quick load:</span>
+        <button class="ql-btn" onclick="quickLoad('irs_scam')">IRS Scam</button>
+        <button class="ql-btn" onclick="quickLoad('tech_support')">Tech Support</button>
+        <button class="ql-btn" onclick="quickLoad('romance_investment')">Romance</button>
+      </div>
+
+    </div><!-- /tab-live -->
+
+  </section><!-- /panel-left -->
+
+  <!-- ─── RIGHT: Analysis Dashboard ─── -->
+  <section class="panel panel-right">
+
+    <!-- Empty state -->
+    <div class="analysis-empty" id="analysisEmpty">
+      <div class="ae-shield">🛡️</div>
+      <div class="ae-title">AEGIS Ready</div>
+      <div class="ae-sub">Analysis will appear here once a conversation starts</div>
+      <div class="ae-vectors">
+        <span class="ae-tag">🧠 Belief Installation</span>
+        <span class="ae-tag">🔒 Verification Suppression</span>
+        <span class="ae-tag">⏱️ Urgency Fabrication</span>
+        <span class="ae-tag">🎭 Authority Hijacking</span>
+        <span class="ae-tag">🌊 Emotional Flooding</span>
+        <span class="ae-tag">🚪 Exit Path Closure</span>
+      </div>
+    </div>
+
+    <!-- Analysis content -->
+    <div class="analysis-content hidden" id="analysisContent">
+
+      <!-- EIS Score -->
+      <div class="eis-block">
+        <div class="eis-gauge-wrap">
+          <svg class="eis-svg" viewBox="0 0 200 115" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"   stop-color="#ff2d55" />
+                <stop offset="50%"  stop-color="#ff8800" />
+                <stop offset="100%" stop-color="#00ff87" />
+              </linearGradient>
+              <filter id="gaugeGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <!-- Track -->
+            <path id="gaugeTrack"
+              d="M 20 100 A 80 80 0 0 1 180 100"
+              fill="none" stroke="#0d1a30" stroke-width="14" stroke-linecap="round"/>
+            <!-- Fill -->
+            <path id="gaugeFill"
+              d="M 20 100 A 80 80 0 0 1 180 100"
+              fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round"
+              stroke-dasharray="0 251.3" filter="url(#gaugeGlow)"/>
+            <!-- Score -->
+            <text id="gaugeScore" x="100" y="88"
+              text-anchor="middle" font-family="Inter,sans-serif"
+              font-size="42" font-weight="900" fill="#e8f4ff">--</text>
+            <text x="100" y="106"
+              text-anchor="middle" font-family="Inter,sans-serif"
+              font-size="11" fill="#405060">/100</text>
+          </svg>
+        </div>
+        <div class="eis-meta">
+          <div class="eis-label">Epistemic Integrity Score</div>
+          <div class="risk-badge" id="riskBadge">--</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Vectors -->
+      <div class="section-hdr">
+        <span class="section-icon">🔬</span>
+        Manipulation Vectors
+      </div>
+
+      <div class="vectors" id="vectors">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Alert -->
+      <div class="alert-box" id="alertBox">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Tools -->
+      <div id="toolsSection" style="display:none">
+        <div class="section-hdr">
+          <span class="section-icon">🔧</span>
+          Verification Tools
+        </div>
+        <div id="toolsList"></div>
+      </div>
+
+    </div><!-- /analysis-content -->
+
+    <!-- Analyzing spinner -->
+    <div class="analyzing hidden" id="analyzing">
+      <div class="analyzing-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="analyzing-text">AEGIS analyzing…</div>
+    </div>
+
+  </section><!-- /panel-right -->
+
+</main><!-- /main-grid -->
+
+<!-- ═══════════════════════ TIMELINE ═══════════════════════ -->
+<section class="timeline-section hidden" id="timelineSection">
+  <div class="section-hdr" style="padding: 0 0 8px;">
+    <span class="section-icon">📈</span>
+    Epistemic Integrity Timeline
+  </div>
+  <div class="timeline-wrap">
+    <canvas id="timelineChart"></canvas>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<footer class="footer">
+  🛡️ AEGIS &nbsp;·&nbsp; Gemma 4 Good Hackathon 2026 &nbsp;·&nbsp;
+  Gemma 4 E4B Fine-tuned · Unsloth · Ollama · 100% On-Device · Zero Data Exfiltration
+</footer>
+
+<script src="{{ url_for('static', filename='js/aegis.js') }}"></script>
+</body>
+</html>

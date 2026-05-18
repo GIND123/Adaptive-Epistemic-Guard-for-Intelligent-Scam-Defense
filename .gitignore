@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+resources/resources/gguf/*.gguf
+resources/resources/lora_adapter/*.safetensors
+resources.zip
+.streamlit/

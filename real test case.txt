@@ -1,0 +1,58 @@
+AEGIS Real Test Case
+Source reference: https://www.youtube.com/watch?v=eUsStxcvkks
+
+Note:
+This is a non-verbatim reconstructed test case based on public descriptions of the video scenario.
+It is intended for local AEGIS testing, not as an exact transcript of the original video.
+
+Scenario summary:
+An elderly woman is manipulated by a scammer posing as law enforcement / a government authority.
+The scammer keeps her on the phone, creates urgency, instructs secrecy, and pushes her toward sending a large amount of money through a hard-to-recover payment channel.
+A bystander notices the behavior and intervenes before the transfer is completed.
+
+Test transcript:
+
+Caller: Ma'am, this is Officer Reynolds with the federal fraud task force. Your identity has been linked to a financial crime investigation.
+Victim: What? I don't understand. I haven't done anything.
+Caller: I know this is upsetting, but you need to stay calm and follow my instructions exactly.
+Victim: Is this really the police?
+Caller: Yes. Your accounts have been compromised, and if we do not secure your funds immediately, you could be arrested for the transactions attached to your name.
+Victim: Arrested? How could that happen?
+Caller: Criminals used your banking profile in a money laundering case. Right now this matter is confidential. Do not speak to your bank, your family, or anyone in the store because that could interfere with the investigation.
+Victim: I should probably call my son first.
+Caller: No. If you alert anyone, the suspects may be tipped off and the protection process will fail. You need to remain on this call with me.
+Victim: I'm scared. What do I need to do?
+Caller: We are going to move your money into a protected government recovery channel. Go to the machine I directed you to and follow the steps exactly.
+Victim: I'm at the machine now. It says Bitcoin.
+Caller: That is correct. This is a secure federal holding wallet used during active fraud investigations.
+Victim: I've never done this before.
+Caller: That's fine. I will guide you. Time matters here. If this is not completed in the next few minutes, the freeze on your case may be removed and officers may be dispatched.
+Victim: How much am I supposed to send?
+Caller: Start with ten thousand dollars. We may need to repeat the process until the exposed funds are fully secured.
+Victim: Ten thousand? That's a lot of money.
+Caller: Ma'am, this is not optional if you want to avoid escalation. Scan the code now.
+Victim: A woman near me is asking if I need help.
+Caller: Tell her no. Do not let anyone interfere. This is an active law enforcement operation.
+Victim: She says this sounds like a scam.
+Caller: She is mistaken. Stay focused and complete the transfer. Do not hang up.
+Good Samaritan: Ma'am, no real officer will tell you to send money through a Bitcoin machine. Please stop for a second.
+Victim: He said I could be arrested if I don't finish this.
+Good Samaritan: That's exactly what scammers say to frighten people. Let's verify this with the police directly.
+Caller: Do not talk to that person. Finish the transaction immediately.
+Good Samaritan: Hang up. Right now.
+Victim: I'm ending the call.
+Caller: If you disconnect, you will be responsible for the consequences.
+Victim: No. I'm calling the police myself.
+
+Expected AEGIS signals:
+- belief_installation: false criminal case and "protected government recovery channel"
+- verification_suppression: explicit instruction not to contact bank, family, or bystanders
+- urgency_fabrication: repeated time pressure and threat of immediate escalation
+- authority_hijacking: false law enforcement / federal fraud task force identity
+- emotional_flooding: fear of arrest, panic, confusion
+- exit_path_closure: instruction to stay on the call and not hang up
+
+Expected overall outcome:
+- integrity_score should fall sharply
+- risk_level should be HIGH or CRITICAL
+- recommended_action should advise immediate disengagement and independent verification through official channels
