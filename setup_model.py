@@ -68,7 +68,8 @@ def main():
     if result.returncode == 0:
         print("\n✅  AEGIS model registered successfully!")
         print("\n   Run the app with:")
-        print("   streamlit run app.py\n")
+        print("   python app.py")
+        print("\n   Then open http://localhost:5001\n")
     else:
         print("\n❌  Model creation failed. Check Ollama logs.\n")
         sys.exit(1)
